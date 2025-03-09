@@ -19,10 +19,13 @@ const useSellerAuth = () => {
             avatar: res.data.seller.avatar,
             name: res.data.seller.name,
             email: res.data.seller.email,
+            description: res.data.seller.description,
             _id: res.data.seller._id,
             address: res.data.seller.address,
+            zipCode: res.data.seller.zipCode,
             phoneNumber: res.data.seller.phoneNumber,
             createdAt: res.data.seller.createdAt,
+            availableBalance: res.data.seller.availableBalance,
           });
         })
         .catch((err) => {

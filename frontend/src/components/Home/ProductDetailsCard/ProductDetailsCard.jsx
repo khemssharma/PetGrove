@@ -2,27 +2,51 @@ import React, { useState } from 'react';
 import { RxCross1 } from 'react-icons/rx';
 import styles from '../../../styles/styles';
 import { AiFillHeart, AiOutlineHeart, AiOutlineMessage, AiOutlineShoppingCart } from 'react-icons/ai';
-import { backend_url } from '../../../server';
-import { Link } from 'react-router-dom';
+import { backend_url, server } from '../../../server';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../../hooks/cart';
 import useWishlist from '../../../hooks/wishlist'; // Import the wishlist hook
 import { toast } from 'react-toastify';
 import useGetProducts from '../../../hooks/getProducts';
+import axios from 'axios';
+import { useRecoilValue } from 'recoil';
+import { userState } from '../../../recoil/atoms/user';
+import { sellerState } from '../../../recoil/atoms/seller';
 
 const ProductDetailsCard = ({ setOpen, data }) => {
     const { addToCart } = useCart();
-    const { wishlist, addToWishlist, removeFromWishlist } = useWishlist(); // Destructure wishlist functions
+    const { wishlist, addToWishlist, removeFromWishlist } = useWishlist(); 
     const imageProduct = `${backend_url}/${data.images[0]}`;
     const imageShop = `${backend_url}/${data.shop.avatar}`;
     const [count, setCount] = useState(1);
     const {products} = useGetProducts(data.shopId);
+    const navigate = useNavigate();
+    const user = useRecoilValue(userState);
 
     // Check if item is already in wishlist
     const isInWishlist = wishlist.some((item) => item._id === data._id);
 
-    const handleMessageSubmit = () => {
-        // Handle message submission
-    };
+    const handleMessageSubmit = async () => {
+        if (user.isAuthenticated) {
+          const groupTitle = data._id + user._id;
+          const userId = user._id;
+          const sellerId = data.shop.shopId;
+          await axios.post(`${server}/conversation/create-new-conversation`, {
+              groupTitle,
+              userId,
+              sellerId,
+            })
+            .then((res) => {
+                navigate(`/inbox?${res.data.conversation._id}`);
+            })
+            .catch((error) => {
+              toast.error(error.response.data.message);
+            });
+        } else {
+          toast.error("Login to send messages");
+        }
+      };
+    
 
     const decrementCount = () => {
         if (count > 1) {

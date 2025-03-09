@@ -38,8 +38,8 @@ const Header = ({ activeHeading }) => {
   const user = useRecoilValue(userState);
   const isAuthenticated = user.isAuthenticated;
   
-  const selller = useRecoilValue(sellerState);
-  const sellerIsAuthenticated = user.isAuthenticated;
+  const seller = useRecoilValue(sellerState);
+  const sellerIsAuthenticated = seller.isAuthenticated;
 
   const handleSearchChange = (e) => {
     const term = e.target.value.toLowerCase();

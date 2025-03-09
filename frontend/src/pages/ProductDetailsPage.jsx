@@ -16,7 +16,6 @@ const ProductDetailsPage = () => {
   const [searchParams] = useSearchParams();
   const eventData = searchParams.get("isEvent");
   const allEvents = useRecoilValue(allEventsState);
-  console.log(id);
 
   useEffect(() => {
     if(eventData !== null){

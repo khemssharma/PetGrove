@@ -11,5 +11,6 @@ export const sellerState = atom({
         isLoading: false,
         description: '',
         address: '',
+        availableBalance: null,
     },
 });

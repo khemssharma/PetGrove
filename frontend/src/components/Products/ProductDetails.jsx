@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AiFillHeart, AiOutlineHeart, AiOutlineMessage, AiOutlineShoppingCart } from 'react-icons/ai';
 import styles from '../../styles/styles';
-import { backend_url } from '../../server';
+import { backend_url, server } from '../../server';
 import Loader from '../Layout/Loader';
 import useGetProducts from '../../hooks/getProducts';
 import { useCart } from '../../hooks/cart';
 import useWishlist from '../../hooks/wishlist';
 import { toast } from 'react-toastify';
 import Ratings from './Ratings';
+import { useRecoilValue } from 'recoil';
+import { userState } from '../../recoil/atoms/user';
+import axios from 'axios';
 
 
 const ProductDetails = ({ data }) => {
@@ -20,14 +23,32 @@ const ProductDetails = ({ data }) => {
     const { addToCart } = useCart(); 
     const { wishlist, addToWishlist, removeFromWishlist } = useWishlist(); 
     const {products} = useGetProducts(data.shopId);
-
+    const user = useRecoilValue(userState);
     // Check if item is already in wishlist
     const isInWishlist = wishlist.some((item) => item._id === data._id);
     
     const incrementCount = () => setCount(count + 1);
     const decrementCount = () => count > 1 && setCount(count - 1);
-
-    const handleMessageSubmit = () => navigate("/inbox?conversation507sabkbcjeo76");
+    const handleMessageSubmit = async () => {
+        if (user.isAuthenticated) {
+          const groupTitle = data._id + user._id;
+          const userId = user._id;
+          const sellerId = data.shopId;
+          await axios.post(`${server}/conversation/create-new-conversation`, {
+              groupTitle,
+              userId, 
+              sellerId,
+            })
+            .then((res) => {
+                navigate(`/inbox?${res.data.conversation._id}`);
+            })
+            .catch((error) => {
+              toast.error(error.response.data.message);
+            });
+        } else {
+          toast.error("Login to send messages");
+        }
+      };
 
     const addToCartHandler = () => {
         if (data.stock < count) {
@@ -57,11 +78,11 @@ const ProductDetails = ({ data }) => {
                 <div className={`${styles.section} w-[90%] 800px:w-[80%]`}>
                     <div className="w-full py-5">
                         <div className="block w-full 800px:flex">
-                            <div className="w-full 800px:w-[50%] flex flex-col item-center">
-                                <img src={`${backend_url}/${data.images[select]}`} alt="" className='w-[80%]' />
-                                <div className="w-full flex p-10">
+                            <div className="800px:w-[70%] flex flex-col items-center ">
+                                <img src={`${backend_url}/${data.images[select]}`} alt="" className='w-[30%]  800px:w-[50%] h-[300px] 800px:h-[400px] mt-5' />
+                                <div className="w-full flex justify-center  overflow-x-auto p-10">
                                     {data.images.map((image, index) => (
-                                        <div key={index} className={`${select === index ? "border-2 border-blue-950" : ""} cursor-pointer px-2`}>
+                                        <div key={index} className={`${select === index ? "border-2 border-blue-950" : ""} cursor-pointer px-2 mt-10`}>
                                             <img
                                                 src={`${backend_url}/${image}`} 
                                                 alt=""
@@ -97,7 +118,7 @@ const ProductDetails = ({ data }) => {
                                     <span className='text-white flex items-center'>Add to cart <AiOutlineShoppingCart className='ml-1' /></span>
                                 </div>
                                 <div className="flex items-center pt-8">
-                                    <img src={`${backend_url}/${data.shop.avatar}`} alt="" className='w-[50px] h-[50px] rounded-full mr-2' />
+                                    <img src={`${backend_url}/${data?.shop?.avatar}`} alt="" className='w-[50px] h-[50px] rounded-full mr-2' />
                                     <div className='pr-8'>
                                         <h3 className={`${styles.shop_name} pb-1 pt-1}`}>{data.shop.name}</h3>
                                         <h5 className='pb-3 text-[15px]'>({averageRating}/5) Ratings</h5>

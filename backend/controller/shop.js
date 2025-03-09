@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const sendMail = require("../utils/sendMailer");
 const sendToken = require("../utils/jwtToken.js");
 const Shop = require("../models/shop");
-const { isAuthenticated, isSeller } = require("../middleware/auth");
+const { isSeller } = require("../middleware/auth");
 const ErrorHandler = require("../utils/ErrorHandler");
 const { upload } = require("../multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors.js");
@@ -200,5 +200,73 @@ router.get(
     }
   })
 );
+
+
+// Update shop profile picture
+router.put(
+  '/update-shop-avatar',
+  isSeller,
+  upload.single('image'),
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const existingSeller = await Shop.findById(req.seller.id);
+
+      // Remove the old avatar file safely
+      if (existingSeller.avatar) {
+        const existingAvatarPath = `uploads/${existingSeller.avatar}`;
+        if (fs.existsSync(existingAvatarPath)) {
+          fs.unlinkSync(existingAvatarPath);
+        }
+      }
+
+      // Save the new avatar
+      const fileUrl = path.join(req.file.filename);
+      const seller = await Shop.findByIdAndUpdate(
+        req.seller.id,
+        { avatar: fileUrl },
+        { new: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        shop: seller,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+//Update seller Info
+
+router.put('/update-shop-info', isSeller, catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { name, description, address, zipCode, phoneNumber } = req.body;
+
+    const shop = await Shop.findOne(req.seller._id);
+
+    if (!shop) {
+      return next(new ErrorHandler("User not found", 400));
+    }
+
+    shop.name = name;
+    shop.description = description;
+    shop.address = address;
+    shop.zipCode = zipCode;
+    shop.phoneNumber = phoneNumber;
+
+
+    await shop.save();
+
+    res.status(201).json({
+      success: true,
+      shop,
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.messasge, 500));
+  }
+}));
+
 
 module.exports = router;

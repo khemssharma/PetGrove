@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { backend_url, server } from '../../server';
 import { userState } from '../../recoil/atoms/user';
-import { useRecoilValue } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete } from 'react-icons/ai';
 import styles from '../../styles/styles';
 import { DataGrid } from '@material-ui/data-grid';
@@ -22,6 +22,7 @@ import { FaArrowRight } from 'react-icons/fa';
 
 const ProfileContent = ({ active }) => {
     const user = useRecoilValue(userState);
+    const setUser = useSetRecoilState(userState);
     const [name, setName] = useState(user?.name);
     const [email, setEmail] = useState(user?.email);
     const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
@@ -29,7 +30,6 @@ const ProfileContent = ({ active }) => {
     const [avatar, setAvatar] = useState(null);
     const { updateUserInfoHandler, loading } = useUpdateUserInfo();
 
-    console.log(user); // Debugging line
     useEffect(() => {
         setName(user?.name || '');
         setEmail(user?.email || '');
@@ -54,18 +54,21 @@ const ProfileContent = ({ active }) => {
         const formData = new FormData();
         formData.append('image', file);
 
-        try {
-            await axios.put(`${server}/user/update-avatar`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-                withCredentials: true,
-            });
-            window.location.reload();
-        } catch (error) {
-            toast.error('Failed to update avatar: ' + error.message);
-        }
-    };
+        await axios.put(`${server}/user/update-avatar`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+            withCredentials: true,
+        }).then((res) => {
+            setUser((prevUser) => ({
+                ...prevUser,
+                avatar: res.data.user.avatar,
+            }));
+            toast.success('Avatar updated successfully!');
+        }).catch((error) => {
+            toast.error(error.response.data.message);
+        });
+    }
 
 
     return (
@@ -163,59 +166,59 @@ const ProfileContent = ({ active }) => {
 
 
 const AllOrders = () => {
-  const { allOrders, loading } = useGetAllOrders();
+    const { allOrders, loading } = useGetAllOrders();
 
-  if (loading) {
-    return <><Loader/></>;
-  }
+    if (loading) {
+        return <><Loader /></>;
+    }
 
-  return (
-    <div className="pl-4 pt-1 space-y-4">
-      {allOrders.map((order) => (
-        <div
-          key={order._id}
-          className="bg-white p-2 border border-gray-200 rounded-md shadow-sm flex items-center justify-between overflow-hidden"
-        >
-          {/* Cart Items */}
-          <div className="flex items-center space-x-4">
-            {order.cart.slice(0, 1).map((item, index) => ( // Show only first item
-              <div key={index} className="flex items-center">
-                <img
-                  src={`${backend_url}/${item.images[0]}`}
-                  alt={item.name}
-                  className="w-16 h-16 object-cover rounded-md cursor-pointer"
-                />
-                <div className="ml-2">
-                  {/* Slice product name for mobile view */}
-                  <p className="text-sm font-medium truncate max-w-[80px] sm:max-w-none sm:whitespace-normal">
-                    {window.innerWidth < 640 ? `${item.name.slice(0, 10)}...` : item.name}
-                  </p>
-                  <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+    return (
+        <div className="pl-4 pt-1 space-y-4 overflow-y-auto">
+            {allOrders.map((order) => (
+                <div
+                    key={order._id}
+                    className="bg-white p-2 border border-gray-200 rounded-md shadow-sm flex items-center justify-between overflow-hidden"
+                >
+                    {/* Cart Items */}
+                    <div className="flex items-center space-x-4">
+                        {order.cart.slice(0, 1).map((item, index) => ( // Show only first item
+                            <div key={index} className="flex items-center">
+                                <img
+                                    src={`${backend_url}/${item.images[0]}`}
+                                    alt={item.name}
+                                    className="w-16 h-16 object-cover rounded-md cursor-pointer"
+                                />
+                                <div className="ml-2">
+                                    {/* Slice product name for mobile view */}
+                                    <p className="text-sm font-medium truncate max-w-[80px] sm:max-w-none sm:whitespace-normal">
+                                        {window.innerWidth < 640 ? `${item.name.slice(0, 10)}...` : item.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Order Summary */}
+                    <div className="ml-auto flex flex-col items-end space-y-1">
+                        {/* Truncated Order ID */}
+                        <h3 className="text-sm font-semibold">
+                            Order: #{order._id.slice(0, 8)}...{/* Slice off part of Order ID */}
+                        </h3>
+                        <p className={`text-xs ${order.status === 'Delivered' ? 'text-green-500' : 'text-orange-500'}`}>
+                            {order.status}
+                        </p>
+                        <p className="text-xs text-gray-600">Total: US$ {order.totalPrice}</p>
+
+                        {/* Action Arrow Icon */}
+                        <Link to={`/user/order/${order._id}`} className="mt-1">
+                            <FaArrowRight className="text-blue-500 text-lg" />
+                        </Link>
+                    </div>
                 </div>
-              </div>
             ))}
-          </div>
-
-          {/* Order Summary */}
-          <div className="ml-auto flex flex-col items-end space-y-1">
-            {/* Truncated Order ID */}
-            <h3 className="text-sm font-semibold">
-              Order: #{order._id.slice(0, 8)}...{/* Slice off part of Order ID */}
-            </h3>
-            <p className={`text-xs ${order.status === 'Delivered' ? 'text-green-500' : 'text-orange-500'}`}>
-              {order.status}
-            </p>
-            <p className="text-xs text-gray-600">Total: US$ {order.totalPrice}</p>
-
-            {/* Action Arrow Icon */}
-            <Link to={`/user/order/${order._id}`} className="mt-1">
-              <FaArrowRight className="text-blue-500 text-lg" />
-            </Link>
-          </div>
         </div>
-      ))}
-    </div>
-  );
+    );
 };
 
 
@@ -255,10 +258,10 @@ const AllRefundOrders = () => {
                                 {order.cart && order.cart.length > 0 ? (
                                     <>
                                         {/* Product Image */}
-                                        <img 
+                                        <img
                                             src={`${backend_url}/${order.cart[0].images[0]}`} // Ensure images is available
-                                            alt={order.cart[0].name} 
-                                            className="w-16 h-16 object-cover rounded mr-4" 
+                                            alt={order.cart[0].name}
+                                            className="w-16 h-16 object-cover rounded mr-4"
                                         />
                                         {/* Product Name */}
                                         <p className="text-sm text-gray-600">
@@ -360,18 +363,18 @@ const ChangePassword = () => {
     const passwordChangeHandler = async (e) => {
         e.preventDefault();
 
-        await axios.put(`${server}/user/update-user-password`, 
-        {currentPassword, newPassword, confirmPassword}, 
-        {withCredentials: true})
-        .then((res)=>{
-            toast.success("Password Updated Succesfully");
-            setCurrentPassword("");
-            setNewPassword('');
-            setConfirmPassword('')
-        })
-        .catch((error)=>{
-            toast.error(error.response.data.message);
-        });
+        await axios.put(`${server}/user/update-user-password`,
+            { currentPassword, newPassword, confirmPassword },
+            { withCredentials: true })
+            .then((res) => {
+                toast.success("Password Updated Succesfully");
+                setCurrentPassword("");
+                setNewPassword('');
+                setConfirmPassword('')
+            })
+            .catch((error) => {
+                toast.error(error.response.data.message);
+            });
     }
     return (
         <div className="w-full px-5">
@@ -380,20 +383,20 @@ const ChangePassword = () => {
             </h1>
             <div className="w-full">
                 <form aria-required onSubmit={passwordChangeHandler} className='flex flex-col items-center'>
-                        <div className="w-[100%] 800px:w-[50%] mt-5">
-                            <label className='block pb-2'>Enter your current password</label>
-                            <input type="password" className={`${styles.input} !w-[95%] mb-4 800px:mb-0`} required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                    <div className="w-[100%] 800px:w-[50%] mt-5">
+                        <label className='block pb-2'>Enter your current password</label>
+                        <input type="password" className={`${styles.input} !w-[95%] mb-4 800px:mb-0`} required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                     </div>
 
-                        <div className="w-[100%] 800px:w-[50%] mt-2">
-                            <label className='block pb-2'>Enter your new password</label>
-                            <input type="password" className={`${styles.input} !w-[95%] mb-4 800px:mb-0`} required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                        </div>
-                        <div className="w-[100%] 800px:w-[50%] mt-2">
-                            <label className='block pb-2'>Confirm your new password</label>
-                            <input type="password" className={`${styles.input} !w-[95%] mb-4 800px:mb-0`} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                        </div>
-                    <input type="submit" className={`w-[95%] h-[40px] border border-[#3a24db] text-center text-[#3a24db] rounded-[3px] mt-8 cursor-pointer`} value="Update"/>
+                    <div className="w-[100%] 800px:w-[50%] mt-2">
+                        <label className='block pb-2'>Enter your new password</label>
+                        <input type="password" className={`${styles.input} !w-[95%] mb-4 800px:mb-0`} required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                    </div>
+                    <div className="w-[100%] 800px:w-[50%] mt-2">
+                        <label className='block pb-2'>Confirm your new password</label>
+                        <input type="password" className={`${styles.input} !w-[95%] mb-4 800px:mb-0`} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    </div>
+                    <input type="submit" className={`w-[95%] h-[40px] border border-[#3a24db] text-center text-[#3a24db] rounded-[3px] mt-8 cursor-pointer`} value="Update" />
                 </form>
             </div>
         </div>

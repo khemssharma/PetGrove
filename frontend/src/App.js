@@ -39,6 +39,8 @@ import {
   ShopAllOrders,
   ShopOrderDetails,
   ShopAllRefunds,
+  ShopSettingsPage,
+  ShopInboxPage,
 } from "./ShopRoutes.js";
 import SellerProtectedRoute from "./SellerProtectedRoute";
 import Loader from "./components/Layout/Loader";
@@ -121,6 +123,14 @@ const App = () => {
               }
             />
             <Route
+              path="/settings"
+              element={
+                <SellerProtectedRoute>
+                  <ShopSettingsPage />
+                </SellerProtectedRoute>
+              }
+            />
+            <Route
               path="/dashboard"
               element={
                 <SellerProtectedRoute>
@@ -189,6 +199,14 @@ const App = () => {
               element={
                 <SellerProtectedRoute>
                   <ShopAllOrders />
+                </SellerProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard-messages"
+              element={
+                <SellerProtectedRoute>
+                  <ShopInboxPage />
                 </SellerProtectedRoute>
               }
             />

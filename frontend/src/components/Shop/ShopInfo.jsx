@@ -4,7 +4,7 @@ import { sellerState } from '../../recoil/atoms/seller';
 import { backend_url, server } from '../../server';
 import styles from '../../styles/styles';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import useGetProducts from '../../hooks/getProducts';
 import Loader from '../Layout/Loader';
 
@@ -12,7 +12,10 @@ const ShopInfo = ({ isOwner }) => {
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState({});
-  const { products } = useGetProducts();
+  const { products } = useGetProducts(id);
+  const totalReviewsLength = products && products.reduce((acc, product) => acc + product.reviews.length, 0);
+  const totalRatings = products && products.reduce((acc, product) => acc + product.reviews.reduce((sum, review) => sum + review.rating, 0 ), 0)
+  const averageRating = totalRatings / totalReviewsLength || 0;
 
   const sellerData = useRecoilValue(sellerState);
 
@@ -81,7 +84,7 @@ const ShopInfo = ({ isOwner }) => {
       </div>
       <div className="p-3">
         <h5 className='font-[600]'>Shop Ratings</h5>
-        <h4 className='text-[#000000a6]'>4/5</h4>
+        <h4 className='text-[#000000a6]'>{averageRating}/5</h4>
       </div>
       <div className="p-3">
         <h5 className='font-[600]'>Joined On</h5>
@@ -89,9 +92,11 @@ const ShopInfo = ({ isOwner }) => {
       </div>
       {isOwner && (
         <div className="py-3 px-4">
-          <div className={`${styles.button} !w-full !h-[42px] !rounded-[5px]`}>
+            <Link to='/settings'>
+            <div className={`${styles.button} !w-full !h-[42px] !rounded-[5px]`}>
             <span className='text-white'>Edit Shop</span>
           </div>
+            </Link>
           <div className={`${styles.button} !w-full !h-[42px] !rounded-[5px]`} onClick={logoutHandler}>
             <span className='text-white'>Log Out</span>
           </div>

@@ -13,6 +13,8 @@ const event = require('./controller/event');
 const coupon = require('./controller/couponCode');
 const payment = require('./controller/payment');
 const order = require('./controller/order');
+const conversation = require('./controller/conversation');
+const messages = require('./controller/messages');
 
 if(process.env.NODE_ENV !== "PRODUCTION"){
     require("dotenv").config({
@@ -32,7 +34,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 if(process.env.NODE_ENV !== "PRODUCTION"){
     require("dotenv").config({
     path:"backend/config/.env"
-});
+}); 
 }
 
 // Import routes
@@ -43,8 +45,10 @@ app.use("/api/v1/event", event);
 app.use("/api/v1/coupon", coupon);
 app.use("/api/v1/payment", payment); 
 app.use("/api/v1/order", order); 
+app.use("/api/v1/conversation", conversation); 
+app.use("/api/v1/messages", messages); 
 
 // Error handling
 app.use(ErrorHandler);
-
+ 
 module.exports = app;
